@@ -53,6 +53,6 @@ app.post("/work", function(req,res){
   res.redirect("/work");
 });
 
-app.listen(3000,function(){ // connect the server to port 3000
+app.listen(process.env.PORT || 3000,function(){ // connect the server to port 3000
   console.log("Server started on port 3000");
 });
