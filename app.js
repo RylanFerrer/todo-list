@@ -28,7 +28,12 @@ const item2 = new Item({
 });
 
 const defaultItems = [item1,item2];
+const listSchema = {
+  name: String,
+  items: [itemsSchema]
+};
 
+const List = mongoose.model("List",listSchema);
 
 
 
@@ -52,17 +57,64 @@ const defaultItems = [item1,item2];
       }
     });
 });
+app.get("/:custom", function(req,res){
+    const custom = req.params.custom;
+    List.findOne({name:custom}, (err,results) => {
+      if (!err)
+      {
+        if(!results)
+        {
+            const list  = new List ({
+              name: custom,
+              items: defaultItems
+            });
+            list.save();
+            res.redirect("/" + custom);
+        }
+        else
+        {
+          res.render("list",
+           {
+             listTitle:results.name,
+             newListItem: results.items
+           });
 
+        }
+      }
+      else
+      {
+        console.log(err);
+      }
+    });
+
+});
 
 
 app.post("/", function(req,res){ // this posts things to the root
 
   const itemName = req.body.newItem; // the item variable is equal to the tasks the user inputs into the search bar
+  const listName = req.body.list;
+
+
   const item = new Item({
     name:itemName
   });
-  item.save();
-  res.redirect("/");
+
+
+  let day = date.getDate();
+  if(listName === date)
+  {
+    item.save();
+    res.redirect("/");
+  }
+  else
+  {
+    List.findOne({name:listName}, (err,results) => {
+      results.items.push(item);
+      results.save();
+      res.redirect("/" + listName);
+    });
+  }
 
 });
 
@@ -79,13 +131,6 @@ app.post("/delete", (req,res) => {
   res.redirect("/");
 });
 
-app.get("/work", function(req,res){ //get the work root
-    res.render("list",
-     {
-      listTitle: "Work List", // The list title will equal to the string "Work List"
-      newListItem: workItems
-     });
-});
 
 app.post("/work", function(req,res){
   let item = req.body.newItem;
