@@ -4,6 +4,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const date = require(__dirname + "/date.js");
+const _ = require("lodash");
 
 const app = express();
 
@@ -51,14 +52,14 @@ const List = mongoose.model("List",listSchema);
         res.redirect("/");
       } else {
         res.render("list", { // this renders the variables into the list.ejs template
-          listTitle: day,
+          listTitle: "Today",
           newListItem: foundItems
         });
       }
     });
 });
 app.get("/:custom", function(req,res){
-    const custom = req.params.custom;
+    const custom = _.capitalize(req.params.custom);
     List.findOne({name:custom}, (err,results) => {
       if (!err)
       {
@@ -102,7 +103,7 @@ app.post("/", function(req,res){ // this posts things to the root
 
 
   let day = date.getDate();
-  if(listName === date)
+  if(listName === "Today")
   {
     item.save();
     res.redirect("/");
@@ -121,14 +122,28 @@ app.post("/", function(req,res){ // this posts things to the root
 
 app.post("/delete", (req,res) => {
   const checkedItemId = req.body.checkbox;
-  Item.findByIdAndRemove(checkedItemId, (err) => {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log("Successfully Deleted");
-    }
-  });
-  res.redirect("/");
+  const listName = req.body.listName;
+  if(listName === "Today")
+  {
+    Item.findByIdAndRemove(checkedItemId, (err) => {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log("Successfully Deleted");
+      }
+    });
+    res.redirect("/");
+
+  }
+  else
+  {
+    List.findOneAndUpdate({name:listName}, {$pull: {items:{_id: checkedItemId}}}, (err,results) =>{
+      if(!err)
+      {
+        res.redirect("/" + listName);
+      }
+    });
+  }
 });
 
 
